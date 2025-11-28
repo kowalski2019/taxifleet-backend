@@ -1,0 +1,29 @@
+name: TaxiFleet Backend Dev CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build and Push Docker Image
+      uses: mr-smithers-excellent/docker-build-push@v5
+      with:
+        image: taxifleet-backend
+        tags: dev_latest
+        dockerfile: Dockerfile.dev
+        registry: ghcr.io
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+  deployment:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: deploy
+        run: |
+          ls -la
