@@ -45,6 +45,8 @@ func Auth(authService *service.AuthService, logger *logrus.Logger) gin.HandlerFu
 
 		logger.Infof("User authenticated: %s %s (%s)", user.FirstName, user.LastName, permissions.GetRoleName(user.Permission))
 
+		logger.Infof("Tenant ID: %d", user.TenantID)
+
 		// Store user in context
 		c.Set("user", user)
 		c.Set("userID", user.ID)
