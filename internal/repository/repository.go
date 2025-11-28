@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -36,6 +38,57 @@ func (r *Repository) GetUserByID(id uint) (*User, error) {
 func (r *Repository) GetUserByEmail(email string) (*User, error) {
 	var user User
 	err := r.db.Preload("Tenant").Where("email = ?", email).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) GetUserByPhone(phone string) (*User, error) {
+	var user User
+	err := r.db.Preload("Tenant").Where("phone = ?", phone).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) GetUserByPhoneNumber(phoneNumber string) (*User, error) {
+	// Search for phone numbers that match the number part (without country code)
+	// Format in DB is "+XX YYYYYYYY", so we search for " YYYYYYYY"
+	var user User
+	err := r.db.Preload("Tenant").Where("phone LIKE ?", "% "+phoneNumber).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) GetUserByEmailOrPhone(emailOrPhone string) (*User, error) {
+	var user User
+
+	// First try email
+	err := r.db.Preload("Tenant").Where("email = ?", emailOrPhone).First(&user).Error
+	if err == nil {
+		return &user, nil
+	}
+
+	// If not found by email, try phone number
+	// Extract phone number part (without country code) if format is "+XX YYYYYYYY"
+	phoneNumber := emailOrPhone
+
+	// If input contains a space, it might be in format "+XX YYYYYYYY"
+	if strings.Contains(emailOrPhone, " ") {
+		// Format: "+XX YYYYYYYY" - extract the number part (everything after first space)
+		parts := strings.Fields(emailOrPhone)
+		if len(parts) > 1 {
+			// Get everything after first space and remove all non-digits
+			phoneNumber = strings.Join(parts[1:], "")
+		}
+	}
+
+	// Remove all non-digit characters from phone number for matching
+	phoneNumber = strings.ReplaceAll(phoneNumber, " ", "")
+	phoneNumber = strings.ReplaceAll(phoneNumber, "-", "")
+	phoneNumber = strings.ReplaceAll(phoneNumber, "(", "")
+	phoneNumber = strings.ReplaceAll(phoneNumber, ")", "")
+	phoneNumber = strings.ReplaceAll(phoneNumber, "+", "")
+
+	// Search for phone numbers that match the number part
+	// Format in DB is "+XX YYYYYYYY", so we search for " YYYYYYYY" (space + number)
+	// Also try exact match in case full format was provided
+	err = r.db.Preload("Tenant").Where("phone LIKE ? OR phone = ?", "% "+phoneNumber, emailOrPhone).First(&user).Error
 	return &user, err
 }
 

@@ -27,7 +27,7 @@ type User struct {
 	Permission   int            `gorm:"not null;default:3" json:"permission"` // Integer permission mask
 	FirstName    string         `gorm:"not null" json:"first_name"`
 	LastName     string         `gorm:"not null" json:"last_name"`
-	Phone        string         `json:"phone"`
+	Phone        string         `gorm:"uniqueIndex" json:"phone"`
 	Active       bool           `gorm:"default:true" json:"active"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`

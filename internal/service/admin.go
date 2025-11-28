@@ -122,7 +122,7 @@ type CreateUserRequest struct {
 	Permission int    `json:"permission" binding:"required"`
 	FirstName  string `json:"first_name" binding:"required"`
 	LastName   string `json:"last_name" binding:"required"`
-	Phone      string `json:"phone"`
+	Phone      string `json:"phone" binding:"required"`
 	Active     bool   `json:"active"`
 }
 
@@ -133,7 +133,7 @@ type UpdateUserRequest struct {
 	Permission int    `json:"permission"`
 	FirstName  string `json:"first_name"`
 	LastName   string `json:"last_name"`
-	Phone      string `json:"phone"`
+	Phone      string `json:"phone" binding:"required"`
 	Active     *bool  `json:"active"`
 }
 
@@ -155,6 +155,18 @@ func (s *AdminService) CreateUser(req CreateUserRequest) (*repository.User, erro
 		return nil, err
 	}
 	// err == gorm.ErrRecordNotFound means user doesn't exist, which is what we want
+
+	// Check if phone number already exists (phone must be unique globally)
+	_, err = s.repo.GetUserByPhone(req.Phone)
+	if err == nil {
+		// User found, phone already exists
+		return nil, errors.New("phone number already exists")
+	}
+	// If error is not "record not found", it's a real error that should be returned
+	if err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	// err == gorm.ErrRecordNotFound means phone doesn't exist, which is what we want
 
 	// Hash password
 	hashedPassword, err := hashPassword(req.Password)
@@ -229,6 +241,20 @@ func (s *AdminService) UpdateUser(id uint, req UpdateUserRequest) (*repository.U
 		}
 	}
 
+	// Check if phone number is being changed and if new one exists
+	if req.Phone != "" && user.Phone != req.Phone {
+		_, err = s.repo.GetUserByPhone(req.Phone)
+		if err == nil {
+			// User found, phone already exists
+			return nil, errors.New("phone number already exists")
+		}
+		// If error is not "record not found", it's a real error that should be returned
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		// err == gorm.ErrRecordNotFound means phone doesn't exist, which is what we want
+	}
+
 	if req.Password != "" {
 		hashedPassword, err := hashPassword(req.Password)
 		if err != nil {
@@ -249,6 +275,7 @@ func (s *AdminService) UpdateUser(id uint, req UpdateUserRequest) (*repository.U
 		user.LastName = req.LastName
 	}
 
+	// Phone is required, always update it
 	if req.Phone != "" {
 		user.Phone = req.Phone
 	}

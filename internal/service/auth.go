@@ -27,13 +27,13 @@ type RegisterRequest struct {
 	Password  string `json:"password" binding:"required,min=6"`
 	FirstName string `json:"first_name" binding:"required"`
 	LastName  string `json:"last_name" binding:"required"`
-	Phone     string `json:"phone"`
+	Phone     string `json:"phone" binding:"required"`
 	Role      string `json:"role"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	EmailOrPhone string `json:"email_or_phone" binding:"required"`
+	Password     string `json:"password" binding:"required"`
 }
 
 type AuthResponse struct {
@@ -43,7 +43,7 @@ type AuthResponse struct {
 }
 
 func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
-	// Check if user exists
+	// Check if user exists by email
 	_, err := s.repo.GetUserByEmail(req.Email)
 	if err == nil {
 		// User found, email already exists
@@ -54,6 +54,18 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 	// err == gorm.ErrRecordNotFound means user doesn't exist, which is what we want
+
+	// Check if phone number already exists (phone must be unique globally)
+	_, err = s.repo.GetUserByPhone(req.Phone)
+	if err == nil {
+		// User found, phone already exists
+		return nil, errors.New("phone number already exists")
+	}
+	// If error is not "record not found", it's a real error that should be returned
+	if err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	// err == gorm.ErrRecordNotFound means phone doesn't exist, which is what we want
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -117,8 +129,8 @@ func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 }
 
 func (s *AuthService) Login(req LoginRequest) (*AuthResponse, error) {
-	// Get user
-	user, err := s.repo.GetUserByEmail(req.Email)
+	// Get user by email or phone
+	user, err := s.repo.GetUserByEmailOrPhone(req.EmailOrPhone)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}
