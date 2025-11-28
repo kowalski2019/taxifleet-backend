@@ -29,6 +29,10 @@ COPY --from=builder /app/main .
 # Copy migration files (if needed at runtime)
 COPY --from=builder /app/migrations ./migrations
 
+# Note: .env file should be mounted at runtime via volume
+# Example: -v /path/to/.env:/root/.env:ro
+# The application will automatically load .env from the working directory
+
 EXPOSE 8880
 
 # Run the application
