@@ -33,10 +33,16 @@ type UpdateTenantRequest struct {
 
 func (s *AdminService) CreateTenant(req CreateTenantRequest) (*repository.Tenant, error) {
 	// Check if subdomain already exists
-	existing, _ := s.repo.GetTenantBySubdomain(req.Subdomain)
-	if existing != nil {
+	_, err := s.repo.GetTenantBySubdomain(req.Subdomain)
+	if err == nil {
+		// Tenant found, subdomain already exists
 		return nil, errors.New("subdomain already exists")
 	}
+	// If error is not "record not found", it's a real error that should be returned
+	if err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	// err == gorm.ErrRecordNotFound means tenant doesn't exist, which is what we want
 
 	settings := req.Settings
 	if settings == "" {
@@ -77,10 +83,16 @@ func (s *AdminService) UpdateTenant(id uint, req UpdateTenantRequest) (*reposito
 	if req.Subdomain != "" {
 		// Check if subdomain is being changed and if new one exists
 		if tenant.Subdomain != req.Subdomain {
-			existing, _ := s.repo.GetTenantBySubdomain(req.Subdomain)
-			if existing != nil {
+			_, err := s.repo.GetTenantBySubdomain(req.Subdomain)
+			if err == nil {
+				// Tenant found, subdomain already exists
 				return nil, errors.New("subdomain already exists")
 			}
+			// If error is not "record not found", it's a real error that should be returned
+			if err != gorm.ErrRecordNotFound {
+				return nil, err
+			}
+			// err == gorm.ErrRecordNotFound means tenant doesn't exist, which is what we want
 			tenant.Subdomain = req.Subdomain
 		}
 	}

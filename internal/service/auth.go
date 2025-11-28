@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
@@ -43,10 +44,16 @@ type AuthResponse struct {
 
 func (s *AuthService) Register(req RegisterRequest) (*AuthResponse, error) {
 	// Check if user exists
-	existing, _ := s.repo.GetUserByEmail(req.Email)
-	if existing != nil {
+	_, err := s.repo.GetUserByEmail(req.Email)
+	if err == nil {
+		// User found, email already exists
 		return nil, errors.New("user with this email already exists")
 	}
+	// If error is not "record not found", it's a real error that should be returned
+	if err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	// err == gorm.ErrRecordNotFound means user doesn't exist, which is what we want
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
