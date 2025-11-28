@@ -9,9 +9,10 @@ import (
 	"taxifleet/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
-func Auth(authService *service.AuthService) gin.HandlerFunc {
+func Auth(authService *service.AuthService, logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -41,6 +42,8 @@ func Auth(authService *service.AuthService) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		logger.Infof("User authenticated: %s %s (%s)", user.FirstName, user.LastName, permissions.GetRoleName(user.Permission))
 
 		// Store user in context
 		c.Set("user", user)

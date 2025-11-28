@@ -194,13 +194,13 @@ func setupRouter(
 			// Registration removed - only admins can create users
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.Refresh)
-			auth.POST("/logout", middleware.Auth(authService), authHandler.Logout)
-			auth.GET("/me", middleware.Auth(authService), authHandler.Me)
+			auth.POST("/logout", middleware.Auth(authService, logger), authHandler.Logout)
+			auth.GET("/me", middleware.Auth(authService, logger), authHandler.Me)
 		}
 
 		// Protected routes
 		protected := v1.Group("")
-		protected.Use(middleware.Auth(authService))
+		protected.Use(middleware.Auth(authService, logger))
 		{
 			// Dashboard
 			dashboard := protected.Group("/dashboard")
