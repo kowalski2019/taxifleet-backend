@@ -137,7 +137,7 @@ CREATE INDEX idx_tenants_deleted_at ON tenants(deleted_at);
 -- Users indexes
 CREATE INDEX idx_users_tenant_id ON users(tenant_id);
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_permission ON users(permission);
 CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 
 -- Sessions indexes

@@ -83,27 +83,24 @@ func main() {
 	users := []struct {
 		Email     string
 		Password  string
-		Role      string
+		Permission int
 		FirstName string
 		LastName  string
 		Phone     string
 	}{
-		{"admin@taxifleet.ci", "admin123", "admin", "Admin", "Admin", "+1234567890"},
-		{"tanguy.gnakpa@gnakpa-transport.com", "owner123", "owner", "Tanguy", "Gnakpa", "+1234567890"},
-		{"manager@gnakpa-transport.com", "manager123", "manager", "Gnakpa", "Sister", "+1234567891"},
-		{"mechanic@gnakpa-transport.com", "mechanic123", "mechanic", "Just", "Mechanicer", "+1234567892"},
-		{"driver@gnakpa-transport.com", "driver123", "driver", "Test", "Driver", "+1234567893"},
+		{"admin@taxifleet.ci", "admin123", permissions.PermissionAdmin, "Admin", "Admin", "+1234567890"},
+		{"tanguy.gnakpa@gnakpa-transport.com", "owner123", permissions.PermissionOwner, "Tanguy", "Gnakpa", "+1234567890"},
+		{"manager@gnakpa-transport.com", "manager123", permissions.PermissionManager, "Gnakpa", "Sister", "+1234567891"},
+		{"mechanic@gnakpa-transport.com", "mechanic123", permissions.PermissionMechanic, "Just", "Mechanicer", "+1234567892"},
+		{"driver@gnakpa-transport.com", "driver123", permissions.PermissionDriver, "Test", "Driver", "+1234567893"},
 	}
 
 	for _, u := range users {
-		// Convert role to permission
-		userPermission := permissions.GetPermissionForRole(u.Role)
-
 		user := &repository.User{
 			TenantID:     tenant.ID,
 			Email:        u.Email,
 			PasswordHash: hashPassword(u.Password),
-			Permission:   userPermission,
+			Permission:   u.Permission,
 			FirstName:    u.FirstName,
 			LastName:     u.LastName,
 			Phone:        u.Phone,
@@ -113,7 +110,7 @@ func main() {
 		if err := repo.CreateUser(user); err != nil {
 			logger.WithError(err).Warnf("Failed to create user %s (may already exist)", u.Email)
 		} else {
-			logger.Infof("Created user: %s %s (%s, permission: %d)", u.FirstName, u.LastName, u.Role, userPermission)
+			logger.Infof("Created user: %s %s (%s, permission: %d)", u.FirstName, u.LastName, permissions.GetRoleName(u.Permission), u.Permission)
 		}
 	}
 
