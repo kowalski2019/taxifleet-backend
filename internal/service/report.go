@@ -227,11 +227,8 @@ func (s *ReportService) Delete(id uint, tenantID uint, driverID uint, permission
 		return errors.New("report not found")
 	}
 
-	// Owner can delete reports in any status (except approved)
+	// Owner/admin can delete reports in any status, including approved
 	if permissions.HasAnyPermission(permission, permissions.PermissionOwner, permissions.PermissionAdmin) {
-		if report.Status == "approved" {
-			return errors.New("cannot delete approved reports")
-		}
 		return s.repo.DeleteReport(id)
 	}
 

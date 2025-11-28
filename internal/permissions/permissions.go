@@ -39,24 +39,19 @@ const (
 // Permission masks for roles
 // These values can be overridden via environment variables
 var (
-	// Admin has all permissions (default: 0xFFFFFFFF, can be set via JWT_ADMIN_PERMISSION_MASK)
 	PermissionAdmin = 0xFFFFFFFF // All bits set
 
-	// Owner has all permissions for their business (default: 0xFFFFF, can be set via JWT_OWNER_PERMISSION_MASK)
 	PermissionOwner = PermissionViewReports | PermissionAddReports | PermissionEditReports | PermissionDeleteReports |
 		PermissionViewTaxis | PermissionAddTaxis | PermissionEditTaxis | PermissionDeleteTaxis |
 		PermissionViewExpenses | PermissionAddExpenses | PermissionEditExpenses | PermissionDeleteExpenses |
 		PermissionViewDeposits | PermissionAddDeposits | PermissionEditDeposits | PermissionDeleteDeposits
 
-	// Manager can only add reports (default: 0x3 = View + Add, can be set via JWT_MANAGER_PERMISSION_MASK)
 	PermissionManager = PermissionViewReports | PermissionAddReports | PermissionEditReports |
 		PermissionViewDeposits | PermissionAddDeposits | PermissionEditDeposits |
 		PermissionViewTaxis
 
-	// Mechanic can view and manage taxis (default: 0x70, can be set via JWT_MECHANIC_PERMISSION_MASK)
 	PermissionMechanic = PermissionViewTaxis | PermissionViewReports
 
-	// Driver can view and add reports (default: 0x3, can be set via JWT_DRIVER_PERMISSION_MASK)
 	PermissionDriver = PermissionViewReports | PermissionAddReports
 )
 
