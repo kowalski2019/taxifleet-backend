@@ -1,0 +1,46 @@
+name: "TaxiFleet Backend Deployment Pipeline"
+description: "A pipeline that deploys the TaxiFleet backend to a container"
+steps:
+  - name: "Stop Container"
+    type: "docker"
+    action: "stop"
+    config:
+      container: "taxifleet-backend-dev"
+    retry: 1
+    on_failure: "continue"
+
+  - name: "Remove Container"
+    type: "docker"
+    action: "rm"
+    config:
+      container: "taxifleet-backend-dev"
+    retry: 1
+    on_failure: "continue"
+
+  - name: "Remove Image"
+    type: "docker"
+    action: "rmi"
+    config:
+      image: "ghcr.io/kowalski2019/taxifleet-backend:dev_latest"
+    retry: 1
+    on_failure: "continue"
+
+  - name: "Pull Docker Image"
+    type: "docker"
+    action: "pull"
+    config:
+      image: "ghcr.io/kowalski2019/taxifleet-backend:dev_latest"
+    retry: 2
+    on_failure: "stop"
+
+  - name: "Run Container"
+    type: "docker"
+    action: "run"
+    config:
+      container: "taxifleet-backend-dev"
+      image: "ghcr.io/kowalski2019/taxifleet-backend:dev_latest"
+      network: "host"
+      volumes: ["/opt/taxifleet_dev:/opt/taxifleet_dev", "/opt/taxifleet_dev/.env:/root/.env:ro"]
+      restart: "always"
+    retry: 1
+    on_failure: "stop"

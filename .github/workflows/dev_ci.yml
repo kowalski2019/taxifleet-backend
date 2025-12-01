@@ -27,22 +27,9 @@ jobs:
     steps:
       - name: deploy
         run: |
-          # Mount .env file from volume to container working directory
-          # The application runs from /root/ and looks for .env there
-          # Volume mapping: /opt/taxifleet_dev (host) -> /opt/taxifleet_dev (container)
-          # Mount .env: /opt/taxifleet_dev/.env (host) -> /root/.env (container)
           res=`curl -sS -X POST \
           --header "Authorization: Goli-Auth-Key ${{ secrets.DEPLOY_AUTH_KEY }}" \
-          --header "Content-Type: application/json" \
-          --data '{ 
-          "name": "taxifleet-backend-dev", 
-          "image": "ghcr.io/kowalski2019/taxifleet-backend:dev_latest", 
-          "network": "host", 
-          "v_map": true,
-          "volume_ex": "/opt/taxifleet_dev", 
-          "volume_in": "/opt/taxifleet_dev",
-          "opts": "--restart=always -v /opt/taxifleet_dev/.env:/root/.env:ro"
-          }' ${{ secrets.DEPLOY_URL }}`
+          https://goli.csmk59.de/api/v1/pipelines/5/run`
           
           [ $? -ne 0 ] && exit 3
           echo $res | jq -r '.description'
