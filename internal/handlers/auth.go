@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"taxifleet/backend/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
@@ -94,3 +95,24 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var req service.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updatedUser, err := h.service.UpdateProfile(userID.(uint), req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedUser)
+}

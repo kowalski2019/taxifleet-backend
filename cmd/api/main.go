@@ -196,6 +196,7 @@ func setupRouter(
 			auth.POST("/refresh", authHandler.Refresh)
 			auth.POST("/logout", middleware.Auth(authService, logger), authHandler.Logout)
 			auth.GET("/me", middleware.Auth(authService, logger), authHandler.Me)
+			auth.PUT("/profile", middleware.Auth(authService, logger), authHandler.UpdateProfile)
 		}
 
 		// Protected routes

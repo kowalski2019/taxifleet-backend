@@ -268,6 +268,99 @@ func (s *AuthService) generateTokens(user *repository.User) (string, string, err
 	return accessTokenString, refreshTokenString, nil
 }
 
+type UpdateProfileRequest struct {
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	Email           string `json:"email" binding:"omitempty,email"`
+	Phone           string `json:"phone"`
+	CurrentPassword string `json:"current_password"` // Required when updating password
+	NewPassword     string `json:"new_password"`     // Optional, only if changing password
+}
+
+func (s *AuthService) UpdateProfile(userID uint, req UpdateProfileRequest) (*repository.User, error) {
+	// Get current user
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Update first name
+	if req.FirstName != "" {
+		user.FirstName = req.FirstName
+	}
+
+	// Update last name
+	if req.LastName != "" {
+		user.LastName = req.LastName
+	}
+
+	// Update email (with uniqueness check)
+	if req.Email != "" && req.Email != user.Email {
+		// Check if email already exists
+		_, err := s.repo.GetUserByEmail(req.Email)
+		if err == nil {
+			// User found, email already exists
+			return nil, errors.New("email already exists")
+		}
+		// If error is not "record not found", it's a real error
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		// Email is available, update it
+		user.Email = req.Email
+	}
+
+	// Update phone (with uniqueness check)
+	if req.Phone != "" && req.Phone != user.Phone {
+		// Check if phone already exists
+		_, err := s.repo.GetUserByPhone(req.Phone)
+		if err == nil {
+			// User found, phone already exists
+			return nil, errors.New("phone number already exists")
+		}
+		// If error is not "record not found", it's a real error
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		// Phone is available, update it
+		user.Phone = req.Phone
+	}
+
+	// Update password (if provided)
+	if req.NewPassword != "" {
+		// Require current password for security
+		if req.CurrentPassword == "" {
+			return nil, errors.New("current password is required to change password")
+		}
+
+		// Verify current password
+		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword))
+		if err != nil {
+			return nil, errors.New("current password is incorrect")
+		}
+
+		// Validate new password
+		if len(req.NewPassword) < 6 {
+			return nil, errors.New("new password must be at least 6 characters")
+		}
+
+		// Hash new password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, errors.New("failed to hash password")
+		}
+		user.PasswordHash = string(hashedPassword)
+	}
+
+	// Save updated user
+	if err := s.repo.UpdateUser(user); err != nil {
+		return nil, errors.New("failed to update profile")
+	}
+
+	// Return updated user
+	return s.repo.GetUserByID(userID)
+}
+
 func generateSubdomain(email string) string {
 	// Simple subdomain generation from email
 	// In production, ensure uniqueness
